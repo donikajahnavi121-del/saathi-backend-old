@@ -3,7 +3,8 @@ services:
     name: saathi-backend-api
     env: node
     plan: free
-    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run seed
+    buildCommand: npm install && npx prisma generate
+    preDeployCommand: npx prisma db push && npm run seed
     startCommand: npm run start
     healthCheckPath: /health
     envVars:
