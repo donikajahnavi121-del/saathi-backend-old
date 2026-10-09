@@ -1,0 +1,204 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Saathi Healthcare API",
+    "description": "Adherence and dropout-prevention platform backend for tuberculosis treatment programs. Built with strict healthcare data privacy and explainable AI risk scoring.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Layer 1 Client/Service API Key (frontend, ivr_webhook, or admin_tool)"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Layer 2 User Authorization (patient, counsellor, or supervisor)"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Check system health",
+        "responses": {
+          "200": { "description": "System is healthy" },
+          "503": { "description": "Database or Redis degraded" }
+        }
+      }
+    },
+    "/api/v1/patient/auth/request-otp": {
+      "post": {
+        "summary": "Request 6-digit OTP for patient phone login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "9412378901" }
+                },
+                "required": ["phone"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OTP dispatched (5-minute TTL)" }
+        }
+      }
+    },
+    "/api/v1/patient/auth/verify-otp": {
+      "post": {
+        "summary": "Verify OTP and obtain patient session tokens",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "9412378901" },
+                  "otp": { "type": "string", "example": "123456" }
+                },
+                "required": ["phone", "otp"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Verified. Returns access and refresh tokens." }
+        }
+      }
+    },
+    "/api/v1/patient/auth/login-pin": {
+      "post": {
+        "summary": "Login with 4-digit PIN (5-attempt lockout)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": { "type": "string", "example": "9412378901" },
+                  "pin": { "type": "string", "example": "1234" }
+                },
+                "required": ["phone", "pin"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "PIN login successful" },
+          "423": { "description": "PIN locked due to 5 failed attempts (15-min lock)" }
+        }
+      }
+    },
+    "/api/v1/patient/today": {
+      "get": {
+        "summary": "Get today's check-in status (done | not_done | missed_yesterday)",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Returns status and translation keys" }
+        }
+      }
+    },
+    "/api/v1/patient/checkins": {
+      "post": {
+        "summary": "Submit daily medicine check-in (Idempotent via Idempotency-Key header)",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Check-in recorded" }
+        }
+      }
+    },
+    "/api/v1/counsellor/dashboard": {
+      "get": {
+        "summary": "Get counsellor dashboard metrics and top attention patients (Cached 60s)",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Dashboard summary" }
+        }
+      }
+    },
+    "/api/v1/counsellor/queue": {
+      "get": {
+        "summary": "Get prioritized patient queue sorted by priorityScore",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Ranked queue with masked phone numbers" }
+        }
+      }
+    },
+    "/api/v1/counsellor/patients/{id}/why-flagged": {
+      "get": {
+        "summary": "Get explainable driver weights and suggested next step for a flagged patient",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ranked reasons and suggested actions" }
+        }
+      }
+    },
+    "/api/v1/counsellor/patients/{id}/call": {
+      "post": {
+        "summary": "Initiate phone call to patient (Returns full phone number and logs AuditLog entry)",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Full phone number and audit record confirmation" }
+        }
+      }
+    },
+    "/api/v1/admin/programme-summary": {
+      "get": {
+        "summary": "Get district programme adherence and default prevention analytics",
+        "security": [{ "ApiKeyAuth": [], "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Programme summary report" }
+        }
+      }
+    },
+    "/api/v1/webhooks/ivr": {
+      "post": {
+        "summary": "IVR telephone keypress callback",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": { "type": "string", "example": "+919412378901" },
+                  "digitsPressed": { "type": "string", "enum": ["1", "2"] }
+                },
+                "required": ["from", "digitsPressed"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Processed digit" }
+        }
+      }
+    }
+  }
+}

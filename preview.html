@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saathi — TB Adherence & Dropout Prevention</title>
+  <!-- Google Fonts: Inter & Noto Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React 18 & Babel for instant browser execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'saathi-teal': '#0F5F5C',
+            'saathi-teal-dark': '#0C4E4B',
+            'saathi-mint': '#E8F2F1',
+            'saathi-slate': '#1B2B2A',
+            'saathi-amber': '#FFF1D6',
+            'saathi-amber-dark': '#8A5D00',
+            'saathi-green': '#2E7D5B',
+            'saathi-border': '#D0E3E1'
+          },
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #E8F2F1;
+      color: #1B2B2A;
+      font-family: 'Inter', 'Noto Sans', sans-serif;
+    }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid #0F5F5C;
+      outline-offset: 2px;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #E8F2F1; }
+    ::-webkit-scrollbar-thumb { background: #A3C5C2; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-[#E8F2F1] text-[#1B2B2A] antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Translation Data for 6 Languages
+    const TRANSLATIONS = {
+      en: {
+        appName: "Saathi",
+        greeting: "Good morning, Ramesh",
+        checkInButton: "Today's medicine check-in",
+        notDoneYet: "Not done yet today",
+        privacyNote: "Your information stays private",
+        navHome: "Home",
+        navHistory: "History",
+        navHelp: "Help",
+        missedTitle: "We missed you yesterday",
+        missedSubtext: "It happens. Let's get back on track.",
+        checkInNow: "Check in now",
+        needHelp: "I need help",
+        savedTitle: "Check-in saved",
+        savedSubtext: "Thank you. See you tomorrow.",
+        viewHistory: "View my history",
+        backHome: "Back to home",
+        showMedicine: "Show your medicine in the frame",
+        takePhoto: "Take photo",
+        cantTakePhoto: "I can't take a photo",
+        counsellorNote: "This helps your counsellor support you.",
+        isPhotoClear: "Is this photo clear?",
+        usePhoto: "Use this photo",
+        retake: "Retake",
+        saving: "Saving... please wait",
+        slowInternet: "Works on slow internet",
+        welcome: "Welcome to Saathi",
+        phoneLabel: "Mobile number",
+        sendCode: "Send code",
+        usePin: "Use PIN instead",
+        privacyLine: "Your information stays private.",
+        october: "October 2026",
+        summary22: "22 of 30 days checked in",
+        legendDone: "Checked in",
+        legendMissed: "Not recorded",
+        legendUpcoming: "Upcoming",
+        anyProblem: "Any problem with your medicine?",
+        optSick: "Feeling sick",
+        optRash: "Skin rash",
+        optTired: "Very tired",
+        optStomach: "Stomach pain",
+        optOther: "Something else",
+        tellUsMore: "Tell us more (optional)",
+        sendCounsellor: "Send to my counsellor",
+        skip: "Skip",
+        counsellorTold: "Your counsellor will be told.",
+        langTitle: "Choose language",
+        textSizeLabel: "Text size",
+        callCounsellor: "Call my counsellor"
+      },
+      hi: {
+        appName: "साथी",
+        greeting: "नमस्ते, रमेश",
+        checkInButton: "आज की दवाई चेक-इन",
+        notDoneYet: "आज अभी तक नहीं हुआ",
+        privacyNote: "आपकी जानकारी पूरी तरह सुरक्षित है",
+        navHome: "होम",
+        navHistory: "इतिहास",
+        navHelp: "मदद",
+        missedTitle: "कल आपकी दवाई छूट गई थी",
+        missedSubtext: "कोई बात नहीं, चलिए आज से फिर शुरू करें।",
+        checkInNow: "अभी चेक-इन करें",
+        needHelp: "मुझे मदद चाहिए",
+        savedTitle: "चेक-इन सहेज लिया गया",
+        savedSubtext: "धन्यवाद। कल फिर मिलेंगे।",
+        viewHistory: "मेरा इतिहास देखें",
+        backHome: "होम पर वापस जाएं",
+        showMedicine: "दवाई को फ्रेम में दिखाएं",
+        takePhoto: "फोटो खींचें",
+        cantTakePhoto: "मैं फोटो नहीं खींच सकता/सकती",
+        counsellorNote: "यह आपके काउंसलर को मदद करने में सहायक है।",
+        isPhotoClear: "क्या यह फोटो साफ है?",
+        usePhoto: "यह फोटो इस्तेमाल करें",
+        retake: "दोबारा फोटो लें",
+        saving: "सहेजा जा रहा है... कृपया प्रतीक्षा करें",
+        slowInternet: "धीमे इंटरनेट पर भी काम करता है",
+        welcome: "साथी में आपका स्वागत है",
+        phoneLabel: "मोबाइल नंबर",
+        sendCode: "कोड भेजें",
+        usePin: "पिन का उपयोग करें",
+        privacyLine: "आपकी जानकारी सुरक्षित रहती है।",
+        october: "अक्टूबर 2026",
+        summary22: "30 में से 22 दिन चेक-इन हुए",
+        legendDone: "चेक-इन हुआ",
+        legendMissed: "दर्ज नहीं",
+        legendUpcoming: "आने वाले दिन",
+        anyProblem: "दवाई से कोई परेशानी?",
+        optSick: "जी मिचलाना / उल्टी",
+        optRash: "त्वचा पर चकत्ते",
+        optTired: "बहुत थकान",
+        optStomach: "पेट दर्द",
+        optOther: "कुछ और",
+        tellUsMore: "अधिक बताएं (वैकल्पिक)",
+        sendCounsellor: "काउंसलर को भेजें",
+        skip: "छोड़ें",
+        counsellorTold: "आपके काउंसलर को सूचित किया जाएगा।",
+        langTitle: "भाषा चुनें",
+        textSizeLabel: "अक्षर का आकार",
+        callCounsellor: "काउंसलर को कॉल करें"
+      },
+      ta: {
+        appName: "சாதி",
+        greeting: "காலை வணக்கம், ரமேஷ்",
+        checkInButton: "இன்றைய மருந்து பதிவு",
+        notDoneYet: "இன்று இன்னும் செய்யப்படவில்லை",
+        privacyNote: "உங்கள் தகவல் பாதுகாப்பாக வைக்கப்படுகிறது",
+        navHome: "முகப்பு",
+        navHistory: "வரலாறு",
+        navHelp: "உதவி",
+        missedTitle: "நேற்று உங்களை தவறவிட்டோம்",
+        missedSubtext: "பரவாயில்லை. மீண்டும் தொடங்குவோம்.",
+        checkInNow: "இப்போது பதிவு செய்யவும்",
+        needHelp: "எனக்கு உதவி தேவை",
+        savedTitle: "பதிவு சேமிக்கப்பட்டது",
+        savedSubtext: "நன்றி. நாளை சந்திப்போம்.",
+        viewHistory: "என் வரலாற்றைப் பார்",
+        backHome: "முகப்புக்குத் திரும்பு",
+        showMedicine: "மருந்தை பிரேமில் காட்டவும்",
+        takePhoto: "படம் எடுக்கவும்",
+        cantTakePhoto: "படம் எடுக்க முடியவில்லை",
+        counsellorNote: "இது ஆலோசகர் உங்களுக்கு உதவ உதவும்.",
+        isPhotoClear: "படம் தெளிவாக உள்ளதா?",
+        usePhoto: "இதைப் பயன்படுத்து",
+        retake: "மீண்டும் எடுக்கவும்",
+        saving: "சேமிக்கப்படுகிறது...",
+        slowInternet: "குறைந்த இணையத்திலும் செயல்படும்",
+        welcome: "சாதி-க்கு நல்வரவு",
+        phoneLabel: "கைபேசி எண்",
+        sendCode: "குறியீடு அனுப்பு",
+        usePin: "பின் பயன்படுத்தவும்",
+        privacyLine: "உங்கள் தகவல் தனிப்பட்டது.",
+        october: "அக்டோபர் 2026",
+        summary22: "30 நாட்களில் 22 நாட்கள் பதிவு செய்யப்பட்டுள்ளன",
+        legendDone: "பதிவானது",
+        legendMissed: "பதிவாகவில்லை",
+        legendUpcoming: "வரவிருக்கும்",
+        anyProblem: "மருந்தால் ஏதேனும் பிரச்சனையா?",
+        optSick: "குமட்டல்",
+        optRash: "தோல் தடிப்பு",
+        optTired: "அதிக சோர்வு",
+        optStomach: "வயிற்று வலி",
+        optOther: "வேறு ஏதேனும்",
+        tellUsMore: "மேலும் கூறவும் (விருப்பத்தேர்வு)",
+        sendCounsellor: "ஆலோசகருக்கு அனுப்பவும்",
+        skip: "தவிர்",
+        counsellorTold: "உங்கள் ஆலோசகருக்கு தெரிவிக்கப்படும்.",
+        langTitle: "மொழியைத் தேர்வு செய்க",
+        textSizeLabel: "எழுத்து அளவு",
+        callCounsellor: "ஆலோசகரை அழைக்கவும்"
+      },
+      te: {
+        appName: "సాథీ",
+        greeting: "శుభోదయం, రమేష్",
+        checkInButton: "నేటి ఔషధ చెక్-ఇన్",
+        notDoneYet: "ఈరోజు ఇంకా చేయలేదు",
+        privacyNote: "మీ సమాచారం గోప్యంగా ఉంటుంది",
+        navHome: "హోమ్",
+        navHistory: "చరిత్ర",
+        navHelp: "సహాయం",
+        missedTitle: "నిన్న మీరు ఔషధం తీసుకోలేదు",
+        missedSubtext: "పర్వాలేదు, ఈరోజు మళ్లీ కొనసాగిద్దాం.",
+        checkInNow: "ఇప్పుడే చెక్-ఇన్ చేయండి",
+        needHelp: "నాకు సహాయం కావాలి",
+        savedTitle: "చెక్-ఇన్ పూర్తయింది",
+        savedSubtext: "ధన్యవాదాలు. రేపు కలుద్దాం.",
+        viewHistory: "నా చరిత్ర చూడండి",
+        backHome: "హోమ్‌కు తిరిగి వెళ్ళండి",
+        showMedicine: "మందును ఫ్రేమ్‌లో చూపించండి",
+        takePhoto: "ఫోటో తీయండి",
+        cantTakePhoto: "నేను ఫోటో తీయలేను",
+        counsellorNote: "ఇది కౌన్సెలర్ మీకు సహాయం చేయడానికి తోడ్పడుతుంది.",
+        isPhotoClear: "ఫోటో స్పష్టంగా ఉందా?",
+        usePhoto: "దీన్ని ఉపయోగించండి",
+        retake: "మళ్లీ తీయండి",
+        saving: "సేవ్ అవుతోంది...",
+        slowInternet: "నెమ్మది ఇంటర్నెట్‌లోనూ పనిచేస్తుంది",
+        welcome: "సాథీకి స్వాగతం",
+        phoneLabel: "మొబైల్ నంబర్",
+        sendCode: "కోడ్ పంపండి",
+        usePin: "పిన్ ఉపయోగించండి",
+        privacyLine: "మీ సమాచారం గోప్యంగా ఉంటుంది.",
+        october: "అక్టోబర్ 2026",
+        summary22: "30 రోజుల్లో 22 రోజులు పూర్తయ్యాయి",
+        legendDone: "తీసుకున్నారు",
+        legendMissed: "నమోదు కాలేదు",
+        legendUpcoming: "రాబోయే రోజులు",
+        anyProblem: "మందులతో ఏదైనా సమస్య ఉందా?",
+        optSick: "వికారం",
+        optRash: "చర్మంపై దద్దుర్లు",
+        optTired: "అలసట",
+        optStomach: "కడుపు నొప్పి",
+        optOther: "ఇతరమైనవి",
+        tellUsMore: "మరింత చెప్పండి (ఐచ్ఛికం)",
+        sendCounsellor: "కౌన్సెలర్‌కు పంపండి",
+        skip: "వదిలివేయండి",
+        counsellorTold: "మీ కౌన్సెలర్‌కు తెలియజేయబడుతుంది.",
+        langTitle: "భాషను ఎంచుకోండి",
+        textSizeLabel: "అక్షరాల పరిమాణం",
+        callCounsellor: "కౌన్సెలర్‌కు కాల్ చేయండి"
+      },
+      bn: {
+        appName: "সাথী",
+        greeting: "সুপ্রভাত, রমেশ",
+        checkInButton: "আজকের ওষুধ চেক-ইন",
+        notDoneYet: "আজ এখনও করা হয়নি",
+        privacyNote: "আপনার তথ্য সম্পূর্ণ গোপন থাকে",
+        navHome: "হোম",
+        navHistory: "ইতিহাস",
+        navHelp: "সাহায্য",
+        missedTitle: "গতকাল আপনার ওষুধ বাদ পড়েছে",
+        missedSubtext: "কোনো ব্যাপার নয়, আজ আবার শুরু করা যাক।",
+        checkInNow: "এখনই চেক-ইন করুন",
+        needHelp: "আমার সাহায্য চাই",
+        savedTitle: "চেক-ইন সংরক্ষিত হয়েছে",
+        savedSubtext: "ধন্যবাদ। আগামীকাল দেখা হবে।",
+        viewHistory: "আমার ইতিহাস দেখুন",
+        backHome: "হোমে ফিরে যান",
+        showMedicine: "ওষুধটি ফ্রেমে দেখান",
+        takePhoto: "ছবি তুলুন",
+        cantTakePhoto: "ছবি তুলতে পারছি না",
+        counsellorNote: "এটি আপনার কাউন্সেলরকে সাহায্য করতে সহায়ক।",
+        isPhotoClear: "ছবিটি কি পরিষ্কার?",
+        usePhoto: "এই ছবিটি ব্যবহার করুন",
+        retake: "আবার তুলুন",
+        saving: "সংরক্ষণ করা হচ্ছে...",
+        slowInternet: "ধীরগতির ইন্টারনেটেও কাজ করে",
+        welcome: "সাথী-তে স্বাগতম",
+        phoneLabel: "মোবাইল নম্বর",
+        sendCode: "কোড পাঠান",
+        usePin: "পিন ব্যবহার করুন",
+        privacyLine: "আপনার তথ্য সুরক্ষিত থাকে।",
+        october: "অক্টোবর ২০২৬",
+        summary22: "৩০ দিনের মধ্যে ২২ দিন সম্পন্ন",
+        legendDone: "সম্পন্ন হয়েছে",
+        legendMissed: "রেকর্ড নেই",
+        legendUpcoming: "আসন্ন দিন",
+        anyProblem: "ওষুধে কোনো সমস্যা হচ্ছে?",
+        optSick: "বমি বমি ভাব",
+        optRash: "ত্বকে ফুসকুড়ি",
+        optTired: "অতিরিক্ত ক্লান্তি",
+        optStomach: "পেটে ব্যথা",
+        optOther: "অন্য কিছু",
+        tellUsMore: "আরও জানান (ঐচ্ছিক)",
+        sendCounsellor: "কাউন্সেলরকে পাঠান",
+        skip: "এড়িয়ে যান",
+        counsellorTold: "আপনার কাউন্সেলরকে জানানো হবে।",
+        langTitle: "ভাষা নির্বাচন করুন",
+        textSizeLabel: "লেখার আকার",
+        callCounsellor: "কাউন্সেলরকে ফোন করুন"
+      },
+      mr: {
+        appName: "साथी",
+        greeting: "शुभ सकाळ, रमेश",
+        checkInButton: "आजचे औषध चेक-इन",
+        notDoneYet: "आज अद्याप केले नाही",
+        privacyNote: "तुमची माहिती पूर्णपणे खाजगी राहते",
+        navHome: "मुख्यपृष्ठ",
+        navHistory: "इतिहास",
+        navHelp: "मदत",
+        missedTitle: "काल तुमचे औषध चुकले",
+        missedSubtext: "काही हरकत नाही, आजपासून पुन्हा सुरू करूया.",
+        checkInNow: "आता चेक-इन करा",
+        needHelp: "मला मदत हवी आहे",
+        savedTitle: "चेक-इन जतन झाले",
+        savedSubtext: "धन्यवाद. उद्या भेटू.",
+        viewHistory: "माझा इतिहास पहा",
+        backHome: "मुख्यपृष्ठावर जा",
+        showMedicine: "औषध फ्रेममध्ये दाखवा",
+        takePhoto: "फोटो काढा",
+        cantTakePhoto: "फोटो काढता येत नाही",
+        counsellorNote: "यामुळे समुपदेशक तुम्हाला मदत करू शकतील.",
+        isPhotoClear: "हा फोटो स्पष्ट आहे का?",
+        usePhoto: "हा फोटो वापरा",
+        retake: "पुन्हा काढा",
+        saving: "जतन करत आहे...",
+        slowInternet: "मंद इंटरनेटवरही काम करते",
+        welcome: "साथी मध्ये आपले स्वागत आहे",
+        phoneLabel: "मोबाईल क्रमांक",
+        sendCode: "कोड पाठवा",
+        usePin: "पिन वापरा",
+        privacyGuaranteed: "तुमची माहिती खाजगी राहते.",
+        october: "ऑक्टोबर २०२६",
+        summary22: "३० पैकी २२ दिवस पूर्ण",
+        legendDone: "चेक-इन झाले",
+        legendMissed: "नोंद नाही",
+        legendUpcoming: "पुढील दिवस",
+        anyProblem: "औषधाचा काही त्रास होत आहे का?",
+        optSick: "मळमळणे",
+        optRash: "अंगावर पुरळ",
+        optTired: "अति थकवा",
+        optStomach: "पोटात दुखणे",
+        optOther: "इतर काही",
+        tellUsMore: "अधिक सांगा (पर्यायी)",
+        sendCounsellor: "समुपदेशकाला पाठवा",
+        skip: "वगळा",
+        counsellorTold: "तुमच्या समुपदेशकाला कळवले जाईल.",
+        langTitle: "भाषा निवडा",
+        textSizeLabel: "अक्षरांचा आकार",
+        callCounsellor: "समुपदेशकाला कॉल करा"
+      }
+    };
+
+    // Realistic Synthetic Patients
+    const MOCK_PATIENTS = [
+      {
+        id: "P-0142",
+        name: "Anita Sharma",
+        firstName: "Anita",
+        phone: "+91 98765 43210",
+        phase: "Continuation Phase - Month 4",
+        regimen: "3-FDC Daily",
+        phc: "Chirag Delhi PHC (8.5 km)",
+        risk: "High",
+        reason: "3 missed in last 5 days",
+        lastContact: "3 days ago",
+        adherence: 68,
+        flagSummary: "High probability of discontinuation in next 7 days based on recent check-in gap and reported fatigue.",
+        reasons: [
+          { text: "Missed 3 of last 5 check-ins", impact: 85 },
+          { text: "Reported side effects last week", impact: 62 },
+          { text: "Lives far from clinic", impact: 45 },
+          { text: "Phone unreachable twice", impact: 30 }
+        ],
+        suggestedNextStep: "Call today and ask about side effects."
+      },
+      {
+        id: "P-0089",
+        name: "Ramesh Kumar",
+        firstName: "Ramesh",
+        phone: "+91 94123 78901",
+        phase: "Continuation Phase - Month 3",
+        regimen: "3-FDC Daily",
+        phc: "Lajpat Nagar Clinic (2.1 km)",
+        risk: "Medium",
+        reason: "Missed yesterday, streak broken",
+        lastContact: "Yesterday",
+        adherence: 73,
+        flagSummary: "Medium risk: Good baseline adherence but broken streak with past weekend gaps.",
+        reasons: [
+          { text: "Missed yesterday check-in", impact: 65 },
+          { text: "Weekend check-in delay pattern", impact: 52 },
+          { text: "Migrant worker schedule variability", impact: 40 }
+        ],
+        suggestedNextStep: "Send friendly reminder & check if refill is needed."
+      },
+      {
+        id: "P-0204",
+        name: "Vikram Singh",
+        firstName: "Vikram",
+        phone: "+91 98112 33445",
+        phase: "Intensive Phase - Month 2",
+        regimen: "4-FDC Daily",
+        phc: "Mehrauli Dispensary (6.0 km)",
+        risk: "High",
+        reason: "4 missed in last 6 days, unreachable",
+        lastContact: "5 days ago",
+        adherence: 54,
+        flagSummary: "Critical early phase default risk: Intensive phase patient missing sequential doses without counsellor contact.",
+        reasons: [
+          { text: "Missed 4 of last 6 check-ins", impact: 92 },
+          { text: "Intensive Phase critical window", impact: 78 },
+          { text: "Two consecutive unanswered calls", impact: 70 },
+          { text: "Reported severe nausea", impact: 55 }
+        ],
+        suggestedNextStep: "Immediate home visit or alternate family contact call."
+      },
+      {
+        id: "P-0118",
+        name: "Sunita Devi",
+        firstName: "Sunita",
+        phone: "+91 97188 22334",
+        phase: "Continuation Phase - Month 5",
+        regimen: "3-FDC Daily",
+        phc: "Kalkaji PHC (1.5 km)",
+        risk: "Medium",
+        reason: "Delayed submission, reported joint pain",
+        lastContact: "4 days ago",
+        adherence: 78,
+        flagSummary: "Moderate drop in timing consistency accompanied by musculoskeletal symptom notes.",
+        reasons: [
+          { text: "Average 4-hour delay in check-in", impact: 60 },
+          { text: "Reported joint pain twice", impact: 55 },
+          { text: "Low home support indicator", impact: 48 }
+        ],
+        suggestedNextStep: "Check symptom severity and verify nearest family caregiver."
+      },
+      {
+        id: "P-0177",
+        name: "Mohd. Imran",
+        firstName: "Imran",
+        phone: "+91 99531 44556",
+        phase: "Continuation Phase - Month 4",
+        regimen: "3-FDC Daily",
+        phc: "Okhla Health Post (3.4 km)",
+        risk: "High",
+        reason: "Refill overdue by 3 days",
+        lastContact: "Oct 5",
+        adherence: 71,
+        flagSummary: "Patient ran out of medicine strip and has not visited dispensary for scheduled refill.",
+        reasons: [
+          { text: "Medicine strip balance indicates 0 pills left", impact: 88 },
+          { text: "Missed scheduled clinic refill appointment", impact: 75 },
+          { text: "Daily check-in stopped since Oct 6", impact: 68 }
+        ],
+        suggestedNextStep: "Call to arrange refill pickup or community delivery."
+      }
+    ];
+
+    // Calendar Days for Ramesh
+    const OCTOBER_DAYS = Array.from({ length: 31 }, (_, i) => {
+      const d = i + 1;
+      if (d > 9) return { day: d, status: 'upcoming' };
+      if (d === 8 || d === 4 || d === 5) return { day: d, status: 'missed' };
+      return { day: d, status: 'done', time: '08:24 AM' };
+    });
+
+    function App() {
+      const [viewMode, setViewMode] = useState('patient'); // patient, counsellor, split
+      const [screenNum, setScreenNum] = useState(2);
+      
+      // Patient states (ZERO LOGIN NEEDED: Opens directly into daily check-in)
+      const [pScreen, setPScreen] = useState('home'); // home, missed, success, photo, review, history, problem, help
+      const [lang, setLang] = useState('en');
+      const [textSize, setTextSize] = useState('medium');
+      const [checkedToday, setCheckedToday] = useState(false);
+      const [selectedHistoryDay, setSelectedHistoryDay] = useState(null);
+      const [uploadProgress, setUploadProgress] = useState(0);
+      const [isUploading, setIsUploading] = useState(false);
+      const [sideEffects, setSideEffects] = useState([]);
+
+      // Counsellor Security & Portal states (LOGIN REQUIRED)
+      const [isCounsellorAuth, setIsCounsellorAuth] = useState(false);
+      const [counsellorEmail, setCounsellorEmail] = useState('sunita.rao@delhihealth.gov.in');
+      const [counsellorPass, setCounsellorPass] = useState('••••••••');
+      const [counsellorDistrict, setCounsellorDistrict] = useState('South Delhi - Chirag Delhi TB Unit');
+      const [cTab, setCTab] = useState('dashboard'); // dashboard, priority, profile, followups, reports
+      const [selectedPatient, setSelectedPatient] = useState(MOCK_PATIENTS[0]);
+      const [profileTab, setProfileTab] = useState('Overview');
+      const [isFollowUpDrawerOpen, setIsFollowUpDrawerOpen] = useState(false);
+      const [followUpReason, setFollowUpReason] = useState('Missed check-in follow-up');
+      const [followUpOutcome, setFollowUpOutcome] = useState('Reached');
+      const [followUpNotes, setFollowUpNotes] = useState('');
+      const [followUpDate, setFollowUpDate] = useState('2026-10-12');
+      const [followUpLogs, setFollowUpLogs] = useState([
+        {
+          id: '1',
+          patientName: 'Anita Sharma',
+          patientId: 'P-0142',
+          reason: 'Reported side effects last week',
+          outcome: 'Reached',
+          notes: 'Advised on taking dose after breakfast. Reassured about fatigue.',
+          nextDate: '2026-10-10',
+          time: 'Yesterday, 04:15 PM'
+        }
+      ]);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [riskFilter, setRiskFilter] = useState('All');
+
+      const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
+      // Quick screen jump
+      const jumpTo = (num) => {
+        setScreenNum(num);
+        if (num === 2) { setViewMode('patient'); setPScreen('home'); setCheckedToday(false); }
+        else if (num === 3) { setViewMode('patient'); setPScreen('success'); setCheckedToday(true); }
+        else if (num === 4) { setViewMode('patient'); setPScreen('missed'); }
+        else if (num === 5) { setViewMode('patient'); setPScreen('photo'); }
+        else if (num === 6) { setViewMode('patient'); setPScreen('review'); }
+        else if (num === 8) { setViewMode('patient'); setPScreen('history'); }
+        else if (num === 9) { setViewMode('patient'); setPScreen('problem'); }
+        else if (num === 10) { setViewMode('patient'); setPScreen('help'); }
+        else if (num === 11) { setViewMode('counsellor'); setIsCounsellorAuth(true); setCTab('dashboard'); }
+        else if (num === 12) { setViewMode('counsellor'); setIsCounsellorAuth(true); setCTab('priority'); }
+        else if (num === 13) { setViewMode('counsellor'); setIsCounsellorAuth(true); setCTab('profile'); setSelectedPatient(MOCK_PATIENTS[0]); }
+        else if (num === 14) { setViewMode('counsellor'); setIsCounsellorAuth(true); setCTab('profile'); setProfileTab('Overview'); }
+        else if (num === 15) { setViewMode('counsellor'); setIsCounsellorAuth(true); setCTab('profile'); setIsFollowUpDrawerOpen(true); }
+      };
+
+      const handleSimulateUpload = () => {
+        setIsUploading(true);
+        let p = 10;
+        const interval = setInterval(() => {
+          p += 30;
+          if (p >= 100) {
+            clearInterval(interval);
+            setUploadProgress(100);
+            setTimeout(() => {
+              setIsUploading(false);
+              setCheckedToday(true);
+              setPScreen('success');
+              setScreenNum(3);
+            }, 300);
+          } else {
+            setUploadProgress(p);
+          }
+        }, 200);
+      };
+
+      const handleCounsellorLogin = (e) => {
+        if (e) e.preventDefault();
+        setIsCounsellorAuth(true);
+        setCTab('dashboard');
+      };
+
+      const handleCounsellorLogout = () => {
+        setIsCounsellorAuth(false);
+      };
+
+      const handleSaveFollowUp = (e) => {
+        e.preventDefault();
+        const newLog = {
+          id: Date.now().toString(),
+          patientName: selectedPatient.name,
+          patientId: selectedPatient.id,
+          reason: followUpReason,
+          outcome: followUpOutcome,
+          notes: followUpNotes || 'Patient contacted via call.',
+          nextDate: followUpDate,
+          time: 'Just now'
+        };
+        setFollowUpLogs([newLog, ...followUpLogs]);
+        setIsFollowUpDrawerOpen(false);
+        setProfileTab('Notes');
+      };
+
+      const fontSizeClass = textSize === 'small' ? 'text-sm' : textSize === 'large' ? 'text-xl' : 'text-base';
+
+      return (
+        <div className="min-h-screen flex flex-col bg-[#E8F2F1]">
+          {/* Top Bar Switcher with Strict Role Separation */}
+          <header className="bg-[#1B2B2A] text-white px-4 py-3 border-b border-[#0F5F5C] sticky top-0 z-50 shadow">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#0F5F5C] flex items-center justify-center font-bold text-white">S</div>
+                <div>
+                  <span className="font-bold text-lg text-white">Saathi</span>
+                  <span className="text-xs text-[#A3C5C2] ml-2 hidden sm:inline">Role-Separated Adherence Architecture</span>
+                </div>
+              </div>
+
+              {/* View Modes */}
+              <div className="flex items-center bg-[#243332] p-1 rounded-xl border border-[#3E5250]">
+                {/* Patient: Zero Login Needed */}
+                <button
+                  onClick={() => setViewMode('patient')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${viewMode === 'patient' ? 'bg-[#0F5F5C] text-white' : 'text-[#A3C5C2] hover:text-white'}`}
+                >
+                  📱 Patient App (Zero Login)
+                </button>
+
+                {/* Counsellor: Login Required */}
+                <button
+                  onClick={() => setViewMode('counsellor')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${viewMode === 'counsellor' ? 'bg-[#0F5F5C] text-white' : 'text-[#A3C5C2] hover:text-white'}`}
+                >
+                  <span>💻 Counsellor Portal</span>
+                  <span>{isCounsellorAuth ? '🟢' : '🔒'}</span>
+                </button>
+
+                <button
+                  onClick={() => setViewMode('split')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition hidden md:block ${viewMode === 'split' ? 'bg-[#0F5F5C] text-white' : 'text-[#A3C5C2] hover:text-white'}`}
+                >
+                  ⚡ Side-by-Side
+                </button>
+              </div>
+
+              {/* Screen Jumper */}
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-[#A3C5C2] font-semibold">Jump to Screen:</span>
+                <select
+                  value={screenNum}
+                  onChange={(e) => jumpTo(Number(e.target.value))}
+                  className="bg-[#243332] text-white text-xs font-semibold py-1.5 px-3 rounded-lg border border-[#3E5250] outline-none cursor-pointer"
+                >
+                  <option value={1}>1. Style Foundation</option>
+                  <option value={2}>2. Patient Home (Zero Login)</option>
+                  <option value={3}>3. Check-in Success</option>
+                  <option value={4}>4. Home Missed State</option>
+                  <option value={5}>5. Photo Viewfinder</option>
+                  <option value={6}>6. Review Photo</option>
+                  <option value={8}>8. My History (Oct 2026)</option>
+                  <option value={9}>9. Side Effects Check</option>
+                  <option value={10}>10. Help & Language</option>
+                  <option value={11}>11. Counsellor Dashboard (Protected)</option>
+                  <option value={12}>12. Priority Queue</option>
+                  <option value={13}>13. Patient Profile</option>
+                  <option value={14}>14. Why Flagged (Explainability)</option>
+                  <option value={15}>15. Log Follow-up Drawer</option>
+                </select>
+
+                {isCounsellorAuth && (
+                  <button onClick={handleCounsellorLogout} className="text-xs font-semibold text-[#FFE0A3] hover:underline hidden lg:inline">
+                    Lock Portal
+                  </button>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* Screen 1: Style Foundation Overview */}
+          {screenNum === 1 && (
+            <div className="max-w-4xl mx-auto p-8 my-auto">
+              <div className="bg-white rounded-2xl p-8 border border-[#D0E3E1] shadow-sm">
+                <span className="text-xs font-bold text-[#0F5F5C] uppercase tracking-wider block mb-1">Specification 1</span>
+                <h1 className="text-3xl font-extrabold text-[#1B2B2A]">Production Style Foundation</h1>
+                <p className="text-base text-[#4B6361] mt-2 mb-6">
+                  Clean, minimal, 2D healthcare app UI. Strict role separation: Patient gets immediate zero-effort check-in without login; Counsellor portal is password-protected.
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                  <div className="p-3 rounded-xl bg-[#0F5F5C] text-white text-xs font-bold text-center">Primary<br/>#0F5F5C</div>
+                  <div className="p-3 rounded-xl bg-[#E8F2F1] text-[#1B2B2A] border border-[#D0E3E1] text-xs font-bold text-center">Mint Bg<br/>#E8F2F1</div>
+                  <div className="p-3 rounded-xl bg-[#1B2B2A] text-white text-xs font-bold text-center">Slate Text<br/>#1B2B2A</div>
+                  <div className="p-3 rounded-xl bg-[#FFF1D6] text-[#8A5D00] border border-[#FFE0A3] text-xs font-bold text-center">Amber Alert<br/>#FFF1D6</div>
+                  <div className="p-3 rounded-xl bg-[#2E7D5B] text-white text-xs font-bold text-center">Success<br/>#2E7D5B</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm text-[#1B2B2A] font-medium mb-6">
+                  <div className="p-3 bg-[#E9F5EF] rounded-xl text-[#2E7D5B]">✓ Patient: Zero login needed (Instant 20-sec check-in)</div>
+                  <div className="p-3 bg-[#E9F5EF] rounded-xl text-[#2E7D5B]">✓ Counsellor: Protected by official login & health unit</div>
+                  <div className="p-3 bg-[#E9F5EF] rounded-xl text-[#2E7D5B]">✓ Zero mention of TB or disease in patient app</div>
+                  <div className="p-3 bg-[#E9F5EF] rounded-xl text-[#2E7D5B]">✓ 56px tall buttons & high-contrast typography</div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button onClick={() => jumpTo(2)} className="flex-1 h-14 bg-[#0F5F5C] text-white rounded-2xl font-bold text-lg">Open Patient App (Zero Login)</button>
+                  <button onClick={() => { setViewMode('counsellor'); setIsCounsellorAuth(false); setScreenNum(11); }} className="flex-1 h-14 bg-white border-2 border-[#0F5F5C] text-[#0F5F5C] rounded-2xl font-bold text-lg">Open Counsellor Portal (Protected)</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main App Layout */}
+          {screenNum !== 1 && (
+            <div className="flex-1 flex overflow-hidden">
+              {/* PATIENT APP (Android 360x800 Frame - ZERO LOGIN REQUIRED) */}
+              {(viewMode === 'patient' || viewMode === 'split') && (
+                <div className={`flex-1 flex items-center justify-center p-4 overflow-y-auto ${viewMode === 'split' ? 'border-r border-[#D0E3E1] max-w-[480px]' : ''}`}>
+                  <div className={`w-[360px] h-[800px] bg-[#E8F2F1] rounded-[36px] border-[10px] border-[#1B2B2A] shadow-2xl overflow-hidden flex flex-col relative select-none ${fontSizeClass}`}>
+                    {/* Phone Status Bar */}
+                    <div className="w-full bg-[#E8F2F1] px-6 pt-3 pb-1 flex items-center justify-between text-xs font-semibold text-[#1B2B2A] z-20">
+                      <span>09:41</span>
+                      <div className="w-3 h-3 rounded-full bg-[#1B2B2A]/80 -mt-1"></div>
+                      <span>5G 88%</span>
+                    </div>
+
+                    {/* App Header (Patient View: NEVER exposes other patients or counsellor portal) */}
+                    {pScreen !== 'photo' && (
+                      <div className="w-full bg-[#E8F2F1] px-6 py-2 flex items-center justify-between border-b border-[#D0E3E1] z-10">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#0F5F5C]"></span>
+                          <span className="font-bold text-xl text-[#0F5F5C]">{t.appName}</span>
+                        </div>
+                        <button onClick={() => { setPScreen('help'); setScreenNum(10); }} className="text-xs font-bold text-[#0F5F5C] bg-white px-2.5 py-1 rounded-full border border-[#D0E3E1]">
+                          {lang.toUpperCase()}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* PATIENT SCREENS: Opens directly into daily check-in */}
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                      {/* SCREEN 2: HOME (NORMAL - ZERO LOGIN) */}
+                      {pScreen === 'home' && (
+                        <div className="flex-1 p-6 flex flex-col justify-between">
+                          <div><p className="text-base font-medium text-[#4B6361]">{t.greeting}</p></div>
+                          <div className="my-auto w-full">
+                            <button
+                              onClick={() => { setPScreen('photo'); setScreenNum(5); }}
+                              className="w-full bg-[#0F5F5C] text-white rounded-2xl p-7 shadow-sm flex flex-col items-center justify-center text-center active:scale-[0.99] border-2 border-[#0F5F5C]"
+                              style={{ minHeight: '190px' }}
+                            >
+                              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-3 text-3xl">💊</div>
+                              <span className="text-2xl font-bold text-white leading-tight">{t.checkInButton}</span>
+                              <span className="text-base text-white/90 mt-2 font-medium">{checkedToday ? t.savedTitle : t.notDoneYet}</span>
+                            </button>
+                          </div>
+                          <div className="text-center text-xs text-[#4B6361] pb-2">🔒 {t.privacyNote}</div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 4: HOME (MISSED STATE) */}
+                      {pScreen === 'missed' && (
+                        <div className="flex-1 p-6 flex flex-col justify-between">
+                          <div><p className="text-base font-medium text-[#4B6361]">{t.greeting}</p></div>
+                          <div className="my-auto">
+                            <div className="bg-[#FFF1D6] rounded-2xl p-6 border border-[#FFE0A3]">
+                              <div className="w-12 h-12 rounded-full bg-[#FFE5B4] flex items-center justify-center text-xl mb-4">ℹ️</div>
+                              <h2 className="text-2xl font-bold text-[#1B2B2A]">{t.missedTitle}</h2>
+                              <p className="text-lg text-[#1B2B2A]/80 mt-2">{t.missedSubtext}</p>
+                            </div>
+                            <div className="mt-8 space-y-3">
+                              <button onClick={() => { setPScreen('photo'); setScreenNum(5); }} className="w-full h-14 bg-[#0F5F5C] text-white rounded-2xl text-lg font-bold">
+                                {t.checkInNow}
+                              </button>
+                              <button onClick={() => { setPScreen('help'); setScreenNum(10); }} className="w-full h-14 bg-white text-[#1B2B2A] border-2 border-[#D0E3E1] rounded-2xl text-lg font-bold">
+                                {t.needHelp}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="text-center text-xs text-[#4B6361] pb-2">🔒 {t.privacyNote}</div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 5: PHOTO CHECK-IN */}
+                      {pScreen === 'photo' && (
+                        <div className="flex-1 p-5 flex flex-col justify-between bg-[#E8F2F1]">
+                          <div>
+                            <button onClick={() => setPScreen('home')} className="text-sm font-semibold text-[#0F5F5C] mb-2 block">← Back</button>
+                            <h1 className="text-2xl font-bold text-[#1B2B2A] text-center">{t.showMedicine}</h1>
+                          </div>
+                          <div className="relative my-auto w-full aspect-[4/5] bg-[#243332] rounded-2xl overflow-hidden flex items-center justify-center border-2 border-[#D0E3E1]">
+                            <svg viewBox="0 0 320 400" className="w-full h-full object-cover filter blur-[2px] opacity-80">
+                              <rect width="320" height="400" fill="#243332" />
+                              <path d="M100 380 C120 300, 110 240, 130 200 C150 170, 180 180, 200 200 C210 220, 210 290, 230 380 Z" fill="#C49B7E" />
+                              <rect x="110" y="160" width="100" height="80" rx="8" fill="#B0C8C6" stroke="#E8F2F1" strokeWidth="3" />
+                              <circle cx="135" cy="185" r="14" fill="#D9534F" />
+                              <circle cx="185" cy="185" r="14" fill="#D9534F" />
+                              <circle cx="135" cy="215" r="14" fill="#D9534F" />
+                              <circle cx="185" cy="215" r="14" fill="#D9534F" />
+                            </svg>
+                            <div className="absolute inset-6 border-2 border-dashed border-white/80 rounded-2xl flex flex-col justify-between p-3 pointer-events-none">
+                              <span className="text-white text-xs bg-black/60 px-3 py-1 rounded-full text-center self-center">Align pill strip in box</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-center gap-3">
+                            <button
+                              onClick={() => { setPScreen('review'); setScreenNum(6); }}
+                              className="w-20 h-20 rounded-full bg-white border-4 border-[#0F5F5C] p-1 shadow-lg active:scale-95 transition"
+                            >
+                              <div className="w-full h-full rounded-full bg-[#0F5F5C] flex items-center justify-center text-white text-2xl font-bold">📸</div>
+                            </button>
+                            <span className="text-base font-bold text-[#1B2B2A]">{t.takePhoto}</span>
+                            <button onClick={() => { setCheckedToday(true); setPScreen('success'); setScreenNum(3); }} className="text-base font-medium text-[#0F5F5C] underline">
+                              {t.cantTakePhoto}
+                            </button>
+                            <span className="text-xs text-[#4B6361] mt-1">🛡️ {t.counsellorNote}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 6: REVIEW PHOTO */}
+                      {pScreen === 'review' && (
+                        <div className="flex-1 p-5 flex flex-col justify-between bg-[#E8F2F1]">
+                          <div className="pt-2 text-center">
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">{t.isPhotoClear}</h1>
+                            <p className="text-sm text-[#4B6361] mt-1">Verify tablets are clear and readable</p>
+                          </div>
+                          <div className="my-auto w-full aspect-[4/3] bg-white rounded-2xl p-3 border-2 border-[#D0E3E1] shadow-sm flex items-center justify-center">
+                            <div className="relative w-full h-full rounded-xl bg-[#2E3F3D] flex items-center justify-center overflow-hidden">
+                              <svg viewBox="0 0 320 240" className="w-full h-full">
+                                <rect width="320" height="240" fill="#2E3F3D" />
+                                <rect x="80" y="50" width="160" height="120" rx="12" fill="#D2E3E0" stroke="#FFFFFF" strokeWidth="4" />
+                                <circle cx="120" cy="85" r="18" fill="#D9534F" />
+                                <circle cx="200" cy="85" r="18" fill="#D9534F" />
+                                <circle cx="120" cy="135" r="18" fill="#D9534F" />
+                                <circle cx="200" cy="135" r="18" fill="#D9534F" />
+                                <text x="105" y="112" fill="#0F5F5C" fontSize="12" fontWeight="bold">DAILY 4-FDC</text>
+                              </svg>
+                              <span className="absolute bottom-2 right-2 bg-[#2E7D5B] text-white text-xs px-2 py-0.5 rounded-full font-bold">✓ Clear</span>
+                            </div>
+                          </div>
+                          <div className="space-y-3 pb-2">
+                            {isUploading ? (
+                              <div className="bg-white rounded-2xl p-4 border border-[#D0E3E1]">
+                                <div className="flex justify-between text-sm font-bold text-[#1B2B2A] mb-2">
+                                  <span>{t.saving}</span>
+                                  <span>{uploadProgress}%</span>
+                                </div>
+                                <div className="w-full bg-[#E8F2F1] h-2 rounded-full overflow-hidden">
+                                  <div className="bg-[#0F5F5C] h-full transition-all duration-200" style={{ width: `${uploadProgress}%` }}></div>
+                                </div>
+                                <span className="block text-center text-xs text-[#4B6361] mt-2">📶 {t.slowInternet}</span>
+                              </div>
+                            ) : (
+                              <>
+                                <button onClick={handleSimulateUpload} className="w-full h-14 bg-[#0F5F5C] text-white rounded-2xl text-lg font-bold">
+                                  {t.usePhoto}
+                                </button>
+                                <button onClick={() => { setPScreen('photo'); setScreenNum(5); }} className="w-full h-14 bg-white text-[#1B2B2A] border-2 border-[#D0E3E1] rounded-2xl text-lg font-bold">
+                                  {t.retake}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 3: CHECK-IN SUCCESS */}
+                      {pScreen === 'success' && (
+                        <div className="flex-1 p-6 flex flex-col justify-between">
+                          <div></div>
+                          <div className="my-auto flex flex-col items-center text-center">
+                            <div className="w-24 h-24 rounded-full bg-[#E9F5EF] flex items-center justify-center mb-6">
+                              <div className="w-16 h-16 rounded-full bg-[#2E7D5B] flex items-center justify-center text-white text-3xl font-bold shadow">✓</div>
+                            </div>
+                            <h1 className="text-3xl font-bold text-[#1B2B2A]">{t.savedTitle}</h1>
+                            <p className="text-xl text-[#4B6361] mt-2">{t.savedSubtext}</p>
+                            <button onClick={() => { setPScreen('problem'); setScreenNum(9); }} className="mt-6 text-base font-semibold text-[#0F5F5C] underline">
+                              {t.anyProblem}
+                            </button>
+                          </div>
+                          <div className="space-y-3 pb-2 text-center">
+                            <button onClick={() => { setPScreen('history'); setScreenNum(8); }} className="w-full h-14 bg-white text-[#1B2B2A] border-2 border-[#D0E3E1] rounded-2xl text-lg font-bold">
+                              {t.viewHistory}
+                            </button>
+                            <button onClick={() => { setPScreen('home'); setScreenNum(2); }} className="text-lg font-medium text-[#0F5F5C] underline py-2 block">
+                              {t.backHome}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 8: MY HISTORY */}
+                      {pScreen === 'history' && (
+                        <div className="flex-1 p-5 flex flex-col justify-between relative overflow-y-auto">
+                          <div>
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">{t.october}</h1>
+                            <p className="text-base font-semibold text-[#0F5F5C] mt-1">{t.summary22}</p>
+
+                            <div className="bg-white rounded-2xl p-4 border border-[#D0E3E1] mt-4 shadow-sm">
+                              <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-[#4B6361] mb-2">
+                                <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                              </div>
+                              <div className="grid grid-cols-7 gap-1.5 text-center">
+                                <div className="aspect-square"></div>
+                                <div className="aspect-square"></div>
+                                <div className="aspect-square"></div>
+                                <div className="aspect-square"></div>
+                                {OCTOBER_DAYS.map((item) => (
+                                  <button
+                                    key={item.day}
+                                    onClick={() => setSelectedHistoryDay(item)}
+                                    className="aspect-square rounded-xl p-1 flex flex-col items-center justify-center hover:bg-slate-50 border border-transparent focus:border-[#0F5F5C]"
+                                  >
+                                    <span className="text-[10px] font-semibold text-[#1B2B2A]">{item.day}</span>
+                                    {item.status === 'done' && <div className="w-4 h-4 rounded-full bg-[#2E7D5B] text-white flex items-center justify-center text-[10px] font-bold">✓</div>}
+                                    {item.status === 'missed' && <div className="w-4 h-4 rounded-full bg-[#8A9C9A] text-white flex items-center justify-center text-[10px] font-bold">-</div>}
+                                    {item.status === 'upcoming' && <div className="w-4 h-4 rounded-full border-2 border-[#B0C8C6]"></div>}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mt-4 bg-white rounded-2xl p-3 border border-[#D0E3E1] flex justify-around text-xs font-semibold">
+                              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-full bg-[#2E7D5B] text-white flex items-center justify-center text-[9px]">✓</span> {t.legendDone}</span>
+                              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-full bg-[#8A9C9A] text-white flex items-center justify-center text-[9px]">-</span> {t.legendMissed}</span>
+                              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-full border-2 border-[#B0C8C6]"></span> {t.legendUpcoming}</span>
+                            </div>
+                          </div>
+                          <div className="text-center text-xs text-[#4B6361] pb-1">Tap any day to see details</div>
+
+                          {selectedHistoryDay && (
+                            <div className="absolute inset-0 bg-black/40 z-30 flex items-end">
+                              <div className="w-full bg-white rounded-t-3xl p-5 border-t border-[#D0E3E1]">
+                                <div className="flex justify-between items-center pb-2 border-b">
+                                  <h3 className="font-bold text-lg text-[#1B2B2A]">October {selectedHistoryDay.day}, 2026</h3>
+                                  <button onClick={() => setSelectedHistoryDay(null)} className="w-7 h-7 rounded-full bg-[#E8F2F1] font-bold">✕</button>
+                                </div>
+                                <div className="py-4">
+                                  {selectedHistoryDay.status === 'done' && <div className="p-3 bg-[#E9F5EF] text-[#2E7D5B] rounded-xl text-sm font-semibold">✓ Verified Medicine Check-in at 08:24 AM</div>}
+                                  {selectedHistoryDay.status === 'missed' && <div className="p-3 bg-[#FFF1D6] text-[#8A5D00] rounded-xl text-sm font-semibold">Not recorded. Your counsellor is here to support you.</div>}
+                                  {selectedHistoryDay.status === 'upcoming' && <div className="p-3 bg-[#F4F9F8] text-[#4B6361] rounded-xl text-sm">Upcoming scheduled dose.</div>}
+                                </div>
+                                <button onClick={() => setSelectedHistoryDay(null)} className="w-full h-11 bg-[#0F5F5C] text-white rounded-xl font-bold">Close</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* SCREEN 9: SIDE EFFECTS CHECK */}
+                      {pScreen === 'problem' && (
+                        <div className="flex-1 p-5 flex flex-col justify-between overflow-y-auto">
+                          <div>
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">{t.anyProblem}</h1>
+                            <p className="text-sm text-[#4B6361] mt-1 font-medium">Optional • Helps counsellor support you</p>
+                            <div className="mt-4 space-y-2">
+                              {[
+                                { id: 'sick', label: t.optSick },
+                                { id: 'rash', label: t.optRash },
+                                { id: 'tired', label: t.optTired },
+                                { id: 'stomach', label: t.optStomach },
+                                { id: 'other', label: t.optOther }
+                              ].map((item) => {
+                                const sel = sideEffects.includes(item.id);
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => setSideEffects(sel ? sideEffects.filter(x => x !== item.id) : [...sideEffects, item.id])}
+                                    className={`w-full min-h-[54px] px-4 rounded-2xl flex items-center justify-between border-2 text-left font-semibold ${sel ? 'bg-[#E9F5EF] border-[#2E7D5B]' : 'bg-white border-[#D0E3E1]'}`}
+                                  >
+                                    <span>{item.label}</span>
+                                    <span className={`w-5 h-5 rounded-md flex items-center justify-center border ${sel ? 'bg-[#2E7D5B] text-white border-[#2E7D5B]' : 'border-[#A3C5C2]'}`}>{sel && '✓'}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="mt-3">
+                              <label className="text-xs font-bold text-[#1B2B2A] mb-1 block">{t.tellUsMore}</label>
+                              <textarea placeholder="E.g., Mild nausea after breakfast..." className="w-full p-2.5 bg-white border-2 border-[#D0E3E1] rounded-xl text-sm outline-none" rows="2"></textarea>
+                            </div>
+                          </div>
+                          <div className="pt-2 space-y-2 text-center">
+                            <button onClick={() => { setPScreen('home'); setScreenNum(2); }} className="w-full h-14 bg-[#0F5F5C] text-white rounded-2xl font-bold text-lg">
+                              {t.sendCounsellor}
+                            </button>
+                            <button onClick={() => { setPScreen('home'); setScreenNum(2); }} className="text-base font-medium text-[#4B6361]">
+                              {t.skip}
+                            </button>
+                            <span className="block text-xs text-[#0F5F5C] font-semibold">🛡️ {t.counsellorTold}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* SCREEN 10: HELP & LANGUAGE */}
+                      {pScreen === 'help' && (
+                        <div className="flex-1 p-5 flex flex-col justify-between overflow-y-auto">
+                          <div>
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">{t.langTitle}</h1>
+                            <div className="grid grid-cols-2 gap-2.5 mt-4">
+                              {[
+                                { code: 'en', native: 'English' },
+                                { code: 'hi', native: 'हिन्दी' },
+                                { code: 'ta', native: 'தமிழ்' },
+                                { code: 'te', native: 'తెలుగు' },
+                                { code: 'bn', native: 'বাংলা' },
+                                { code: 'mr', native: 'मराठी' }
+                              ].map((l) => (
+                                <button
+                                  key={l.code}
+                                  onClick={() => setLang(l.code)}
+                                  className={`h-14 px-4 rounded-2xl border-2 flex items-center justify-between font-bold ${lang === l.code ? 'bg-[#E9F5EF] border-[#0F5F5C] text-[#0F5F5C]' : 'bg-white border-[#D0E3E1]'}`}
+                                >
+                                  <span>{l.native}</span>
+                                  {lang === l.code && <span>✓</span>}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="mt-6 bg-white rounded-2xl p-4 border border-[#D0E3E1]">
+                              <label className="text-sm font-bold text-[#1B2B2A] block mb-2">{t.textSizeLabel}</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                <button onClick={() => setTextSize('small')} className={`h-11 rounded-xl border-2 font-bold ${textSize === 'small' ? 'bg-[#0F5F5C] text-white border-[#0F5F5C]' : 'bg-[#E8F2F1]'}`}>A (Small)</button>
+                                <button onClick={() => setTextSize('medium')} className={`h-11 rounded-xl border-2 font-bold ${textSize === 'medium' ? 'bg-[#0F5F5C] text-white border-[#0F5F5C]' : 'bg-[#E8F2F1]'}`}>A (Medium)</button>
+                                <button onClick={() => setTextSize('large')} className={`h-11 rounded-xl border-2 font-bold ${textSize === 'large' ? 'bg-[#0F5F5C] text-white border-[#0F5F5C]' : 'bg-[#E8F2F1]'}`}>A (Large)</button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="pt-4 pb-1 text-center">
+                            <button onClick={() => alert("Connecting to Toll-free Counsellor Hotline: 1800-11-6666")} className="w-full h-14 bg-[#0F5F5C] text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-2">
+                              <span>📞</span> <span>{t.callCounsellor}</span>
+                            </button>
+                            <span className="block text-xs text-[#4B6361] mt-2 font-medium">Toll-free counsellor direct line • 8 AM - 8 PM</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Nav for normal patient screens */}
+                    {pScreen !== 'photo' && pScreen !== 'review' && (
+                      <nav className="w-full bg-white border-t border-[#D0E3E1] px-4 py-2 flex items-center justify-around z-10 shrink-0">
+                        <button onClick={() => { setPScreen('home'); setScreenNum(2); }} className={`flex flex-col items-center py-1 px-4 ${pScreen === 'home' || pScreen === 'missed' ? 'text-[#0F5F5C] font-bold' : 'text-[#4B6361]'}`}>
+                          <span className="text-lg">🏠</span><span className="text-xs">{t.navHome}</span>
+                        </button>
+                        <button onClick={() => { setPScreen('history'); setScreenNum(8); }} className={`flex flex-col items-center py-1 px-4 ${pScreen === 'history' ? 'text-[#0F5F5C] font-bold' : 'text-[#4B6361]'}`}>
+                          <span className="text-lg">📅</span><span className="text-xs">{t.navHistory}</span>
+                        </button>
+                        <button onClick={() => { setPScreen('help'); setScreenNum(10); }} className={`flex flex-col items-center py-1 px-4 ${pScreen === 'help' ? 'text-[#0F5F5C] font-bold' : 'text-[#4B6361]'}`}>
+                          <span className="text-lg">❓</span><span className="text-xs">{t.navHelp}</span>
+                        </button>
+                      </nav>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* COUNSELLOR DESKTOP PORTAL (LOGIN PROTECTED) */}
+              {(viewMode === 'counsellor' || viewMode === 'split') && (
+                <div className="flex-1 flex overflow-hidden bg-white">
+                  {!isCounsellorAuth ? (
+                    /* COUNSELLOR LOGIN SCREEN */
+                    <div className="flex-1 flex flex-col justify-center items-center p-6 bg-[#E8F2F1]">
+                      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-[#D0E3E1] shadow-xl">
+                        <div className="text-center mb-6">
+                          <div className="w-14 h-14 rounded-2xl bg-[#0F5F5C] text-white flex items-center justify-center mx-auto mb-3 text-2xl">
+                            🏥
+                          </div>
+                          <span className="text-xs font-bold text-[#0F5F5C] uppercase tracking-wider block">
+                            Health Worker Secure Portal
+                          </span>
+                          <h1 className="text-2xl font-extrabold text-[#1B2B2A] mt-1">Counsellor Sign In</h1>
+                          <p className="text-xs text-[#4B6361] mt-1">Authorized health staff credentials required</p>
+                        </div>
+
+                        <form onSubmit={handleCounsellorLogin} className="space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold text-[#1B2B2A] mb-1">Counsellor ID / Email</label>
+                            <input
+                              type="text"
+                              value={counsellorEmail}
+                              onChange={(e) => setCounsellorEmail(e.target.value)}
+                              className="w-full h-11 px-3 bg-white border-2 border-[#D0E3E1] rounded-xl text-sm font-medium outline-none focus:border-[#0F5F5C]"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-[#1B2B2A] mb-1">Passcode / PIN</label>
+                            <input
+                              type="password"
+                              value={counsellorPass}
+                              onChange={(e) => setCounsellorPass(e.target.value)}
+                              className="w-full h-11 px-3 bg-white border-2 border-[#D0E3E1] rounded-xl text-sm font-medium outline-none focus:border-[#0F5F5C]"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-[#1B2B2A] mb-1">Health Center Unit</label>
+                            <select
+                              value={counsellorDistrict}
+                              onChange={(e) => setCounsellorDistrict(e.target.value)}
+                              className="w-full h-11 px-3 bg-white border-2 border-[#D0E3E1] rounded-xl text-xs font-medium outline-none focus:border-[#0F5F5C]"
+                            >
+                              <option>South Delhi - Chirag Delhi TB Unit</option>
+                              <option>South East Delhi - Lajpat Nagar Clinic</option>
+                              <option>Central Delhi - Daryaganj Chest Clinic</option>
+                            </select>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="w-full h-12 bg-[#0F5F5C] text-white rounded-xl text-base font-bold shadow mt-2"
+                          >
+                            🔒 Authenticate & Open Portal
+                          </button>
+                        </form>
+
+                        <div className="mt-4 pt-3 border-t text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleCounsellorLogin()}
+                            className="text-xs font-bold text-[#0F5F5C] bg-[#E9F5EF] px-3 py-1.5 rounded-lg"
+                          >
+                            ⚡ 1-Click Demo Login
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* AUTHENTICATED COUNSELLOR INTERFACE */
+                    <>
+                      {/* Sidebar */}
+                      <aside className="w-60 bg-white border-r border-[#D0E3E1] flex flex-col justify-between shrink-0 select-none">
+                        <div>
+                          <div className="p-6 border-b border-[#E8F2F1]">
+                            <div className="text-xl font-bold text-[#0F5F5C]">Saathi</div>
+                            <div className="text-xs font-semibold text-[#4B6361]">Counsellor Portal</div>
+                          </div>
+                          <nav className="p-4 space-y-1">
+                            {[
+                              { id: 'dashboard', label: 'Dashboard', icon: '📊', num: 11 },
+                              { id: 'priority', label: 'Patients', icon: '👥', num: 12 },
+                              { id: 'followups', label: 'Follow-ups', icon: '📞', num: 15 },
+                              { id: 'reports', label: 'Reports', icon: '📈', num: 11 }
+                            ].map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => { setCTab(item.id); setScreenNum(item.num); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-left ${cTab === item.id ? 'bg-[#E9F5EF] text-[#0F5F5C]' : 'text-[#4B6361] hover:bg-[#F4F9F8]'}`}
+                              >
+                                <span>{item.icon}</span>
+                                <span>{item.label}</span>
+                              </button>
+                            ))}
+                          </nav>
+                        </div>
+                        <div className="p-4 m-3 bg-[#F4F9F8] rounded-xl border border-[#D0E3E1]">
+                          <div className="text-sm font-bold text-[#1B2B2A]">Sunita Rao</div>
+                          <div className="text-xs text-[#4B6361]">Adherence Counsellor</div>
+                          <div className="text-[11px] text-[#0F5F5C] font-semibold mt-0.5 truncate">{counsellorDistrict}</div>
+                          <button
+                            onClick={handleCounsellorLogout}
+                            className="mt-3 w-full py-1.5 bg-white text-[#A62F18] border border-[#D0E3E1] rounded-lg text-xs font-bold hover:bg-[#FFE5D9]"
+                          >
+                            Lock & Sign Out
+                          </button>
+                        </div>
+                      </aside>
+
+                      {/* Main Desktop Content */}
+                      <main className="flex-1 flex flex-col overflow-y-auto bg-[#E8F2F1] p-8">
+                        {/* SCREEN 11: COUNSELLOR DASHBOARD */}
+                        {cTab === 'dashboard' && (
+                          <div className="space-y-8">
+                            <div>
+                              <h1 className="text-2xl font-bold text-[#1B2B2A]">Counsellor Dashboard</h1>
+                              <p className="text-base text-[#4B6361] mt-1">South District TB Adherence Hub • Today, 9 October 2026</p>
+                            </div>
+
+                            {/* Top row 4 metrics */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1] shadow-sm">
+                                <span className="text-xs font-bold text-[#4B6361] uppercase tracking-wider">Patients</span>
+                                <div className="text-4xl font-extrabold text-[#1B2B2A] mt-2">200</div>
+                                <span className="text-sm text-[#4B6361] mt-1 block">Active on regimen</span>
+                              </div>
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1] shadow-sm">
+                                <span className="text-xs font-bold text-[#4B6361] uppercase tracking-wider">Checked in today</span>
+                                <div className="text-4xl font-extrabold text-[#2E7D5B] mt-2">164</div>
+                                <span className="text-sm text-[#2E7D5B] font-medium mt-1 block">82% daily rate</span>
+                              </div>
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1] shadow-sm">
+                                <span className="text-xs font-bold text-[#4B6361] uppercase tracking-wider">Need attention</span>
+                                <div className="text-4xl font-extrabold text-[#8A5D00] mt-2">12</div>
+                                <span className="text-sm text-[#8A5D00] font-medium mt-1 block">Missed check-in / alert</span>
+                              </div>
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1] shadow-sm">
+                                <span className="text-xs font-bold text-[#4B6361] uppercase tracking-wider">Follow-ups due</span>
+                                <div className="text-4xl font-extrabold text-[#0F5F5C] mt-2">7</div>
+                                <span className="text-sm text-[#0F5F5C] font-medium mt-1 block">Scheduled for today</span>
+                              </div>
+                            </div>
+
+                            {/* Needs attention today: 5 rows */}
+                            <div className="bg-white rounded-2xl border border-[#D0E3E1] p-6 shadow-sm">
+                              <div className="flex justify-between items-center pb-4 border-b">
+                                <div>
+                                  <h2 className="text-xl font-bold text-[#1B2B2A]">Needs attention today</h2>
+                                  <p className="text-sm text-[#4B6361]">Ranked by intervention priority • Target counsellor outreach</p>
+                                </div>
+                                <button onClick={() => { setCTab('priority'); setScreenNum(12); }} className="text-base font-bold text-[#0F5F5C] hover:underline">
+                                  View priority queue →
+                                </button>
+                              </div>
+                              <div className="divide-y divide-[#E8F2F1]">
+                                {MOCK_PATIENTS.slice(0, 5).map((p, idx) => (
+                                  <div key={p.id} className="py-4 flex items-center justify-between hover:bg-[#F4F9F8] px-3 rounded-xl transition">
+                                    <div className="flex items-center gap-3 min-w-[200px]">
+                                      <span className="w-6 h-6 rounded-full bg-[#E8F2F1] text-xs font-bold text-[#4B6361] flex items-center justify-center">#{idx + 1}</span>
+                                      <div>
+                                        <button onClick={() => { setSelectedPatient(p); setCTab('profile'); setScreenNum(13); }} className="font-bold text-lg text-[#1B2B2A] hover:text-[#0F5F5C] text-left">
+                                          {p.id} {p.firstName}
+                                        </button>
+                                        <div className="text-xs text-[#4B6361]">{p.phone}</div>
+                                      </div>
+                                    </div>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.risk === 'High' ? 'bg-[#FFE5D9] text-[#A62F18]' : 'bg-[#FFF1D6] text-[#8A5D00]'}`}>
+                                      {p.risk} Risk
+                                    </span>
+                                    <div className="flex-1 px-6">
+                                      <div className="text-base font-medium text-[#1B2B2A]">{p.reason}</div>
+                                      <div className="text-xs text-[#4B6361]">Last contact: {p.lastContact}</div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => alert(`Calling ${p.name} (${p.phone})`)} className="h-10 px-4 bg-[#0F5F5C] text-white rounded-xl text-sm font-bold">📞 Call</button>
+                                      <button onClick={() => { setSelectedPatient(p); setCTab('profile'); setScreenNum(13); }} className="h-10 px-4 bg-white border border-[#D0E3E1] text-[#1B2B2A] rounded-xl text-sm font-semibold">View</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* SCREEN 12: PRIORITY QUEUE */}
+                        {cTab === 'priority' && (
+                          <div className="space-y-6">
+                            <div>
+                              <h1 className="text-2xl font-bold text-[#1B2B2A]">Priority Queue</h1>
+                              <p className="text-base text-[#4B6361] mt-1">Ranked patient list for proactive counsellor intervention</p>
+                            </div>
+
+                            {/* Search & Filter */}
+                            <div className="bg-white rounded-2xl p-4 border border-[#D0E3E1] flex flex-wrap items-center justify-between gap-4">
+                              <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search by ID or name (e.g. P-0142, Anita)..."
+                                className="w-80 h-11 px-4 bg-[#F4F9F8] border border-[#D0E3E1] rounded-xl text-sm outline-none focus:border-[#0F5F5C]"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-[#4B6361]">Filter:</span>
+                                {['All', 'High', 'Medium', 'Low'].map((r) => (
+                                  <button
+                                    key={r}
+                                    onClick={() => setRiskFilter(r)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${riskFilter === r ? 'bg-[#0F5F5C] text-white' : 'bg-[#F4F9F8] text-[#4B6361]'}`}
+                                  >
+                                    {r}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Priority Queue Table (Max 6 cols) */}
+                            <div className="bg-white rounded-2xl border border-[#D0E3E1] shadow-sm overflow-hidden">
+                              <table className="w-full text-left">
+                                <thead className="bg-[#F4F9F8] border-b text-xs font-bold text-[#4B6361] uppercase">
+                                  <tr>
+                                    <th className="py-4 px-6">Rank</th>
+                                    <th className="py-4 px-6">Patient</th>
+                                    <th className="py-4 px-6">Risk</th>
+                                    <th className="py-4 px-6">Reason</th>
+                                    <th className="py-4 px-6">Last Contact</th>
+                                    <th className="py-4 px-6 text-right">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#E8F2F1]">
+                                  {MOCK_PATIENTS.filter(p => (riskFilter === 'All' || p.risk === riskFilter) && (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.id.toLowerCase().includes(searchQuery.toLowerCase()))).map((p, idx) => (
+                                    <tr key={p.id} className="hover:bg-[#F9FCFB]">
+                                      <td className="py-4 px-6 font-bold text-base text-[#4B6361]">#{idx + 1}</td>
+                                      <td className="py-4 px-6">
+                                        <button onClick={() => { setSelectedPatient(p); setCTab('profile'); setScreenNum(13); }} className="font-bold text-lg text-[#1B2B2A] hover:text-[#0F5F5C] text-left block">
+                                          {p.id} {p.firstName}
+                                        </button>
+                                        <span className="text-xs text-[#4B6361]">{p.name}</span>
+                                      </td>
+                                      <td className="py-4 px-6">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.risk === 'High' ? 'bg-[#FFE5D9] text-[#A62F18]' : 'bg-[#FFF1D6] text-[#8A5D00]'}`}>
+                                          {p.risk}
+                                        </span>
+                                      </td>
+                                      <td className="py-4 px-6 text-base font-medium text-[#1B2B2A]">{p.reason}</td>
+                                      <td className="py-4 px-6 text-sm text-[#4B6361]">{p.lastContact}</td>
+                                      <td className="py-4 px-6 text-right">
+                                        <button onClick={() => alert(`Calling ${p.name}`)} className="h-10 px-4 bg-[#0F5F5C] text-white rounded-xl text-sm font-bold">📞 Call</button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* SCREEN 13, 14, 15: PATIENT PROFILE & EXPLAINABILITY */}
+                        {cTab === 'profile' && (
+                          <div className="space-y-6">
+                            <button onClick={() => { setCTab('priority'); setScreenNum(12); }} className="text-sm font-bold text-[#0F5F5C]">← Back to Priority Queue</button>
+
+                            {/* Compact Header (Screen 13) */}
+                            <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1] shadow-sm flex flex-wrap justify-between items-center gap-4">
+                              <div>
+                                <div className="flex items-center gap-3">
+                                  <h1 className="text-2xl font-bold text-[#1B2B2A]">{selectedPatient.name}</h1>
+                                  <span className="text-xs font-bold bg-[#F4F9F8] px-2.5 py-1 rounded border">{selectedPatient.id}</span>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${selectedPatient.risk === 'High' ? 'bg-[#FFE5D9] text-[#A62F18]' : 'bg-[#FFF1D6] text-[#8A5D00]'}`}>
+                                    {selectedPatient.risk} Risk
+                                  </span>
+                                </div>
+                                <div className="text-sm text-[#4B6361] mt-1">
+                                  {selectedPatient.phase} • {selectedPatient.phone} • {selectedPatient.phc}
+                                </div>
+                              </div>
+                              <div className="flex gap-3">
+                                <button onClick={() => alert(`Calling ${selectedPatient.name}`)} className="h-12 px-5 bg-[#0F5F5C] text-white rounded-xl font-bold text-base">
+                                  📞 Call patient
+                                </button>
+                                <button onClick={() => { setIsFollowUpDrawerOpen(true); setScreenNum(15); }} className="h-12 px-5 bg-white border-2 border-[#D0E3E1] text-[#1B2B2A] rounded-xl font-bold text-base">
+                                  📝 Log follow-up
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Profile Tabs & Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                              <div className="lg:col-span-8 space-y-6">
+                                <div className="bg-white rounded-2xl p-2 border border-[#D0E3E1] flex gap-2">
+                                  {['Overview', 'Adherence', 'Notes'].map((t) => (
+                                    <button
+                                      key={t}
+                                      onClick={() => setProfileTab(t)}
+                                      className={`flex-1 py-3 font-bold rounded-xl text-base ${profileTab === t ? 'bg-[#0F5F5C] text-white' : 'text-[#4B6361]'}`}
+                                    >
+                                      {t}
+                                    </button>
+                                  ))}
+                                </div>
+
+                                {/* SCREEN 14: WHY THIS PATIENT IS FLAGGED (EXPLAINABILITY) */}
+                                {profileTab === 'Overview' && (
+                                  <div className="space-y-6">
+                                    <div className="bg-white rounded-2xl border border-[#D0E3E1] p-6 shadow-sm">
+                                      <div className="pb-4 border-b flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                          <h3 className="text-xl font-bold text-[#1B2B2A]">Why this patient is flagged</h3>
+                                          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-[#FFE5D9] text-[#A62F18]">{selectedPatient.risk} risk</span>
+                                        </div>
+                                      </div>
+                                      <p className="text-base text-[#4B6361] mt-3">{selectedPatient.flagSummary}</p>
+
+                                      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-6">
+                                        {/* Ranked list of 4 reasons with small horizontal bars */}
+                                        <div className="md:col-span-7 space-y-3">
+                                          <span className="text-xs font-bold text-[#4B6361] uppercase tracking-wider block">Key Factors (Plain Language)</span>
+                                          {selectedPatient.reasons.map((r, i) => (
+                                            <div key={i} className="space-y-1">
+                                              <div className="flex justify-between text-sm font-semibold text-[#1B2B2A]">
+                                                <span>{i + 1}. {r.text}</span>
+                                                <span className="text-xs text-[#4B6361]">{r.impact}% weight</span>
+                                              </div>
+                                              <div className="w-full bg-[#E8F2F1] h-2 rounded-full overflow-hidden">
+                                                <div className="bg-[#0F5F5C] h-full rounded-full" style={{ width: `${r.impact}%` }}></div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+
+                                        {/* Suggested Next Step Card */}
+                                        <div className="md:col-span-5 bg-[#FFF1D6] rounded-2xl p-5 border border-[#FFE0A3] flex flex-col justify-between">
+                                          <div>
+                                            <span className="text-xs font-bold text-[#8A5D00] uppercase tracking-wider block mb-2">✨ Suggested Next Step</span>
+                                            <p className="text-lg font-bold text-[#1B2B2A] leading-snug">{selectedPatient.suggestedNextStep}</p>
+                                            <p className="text-xs text-[#8A5D00] mt-2">Zero jargon. Direct actionable clinical recommendation.</p>
+                                          </div>
+                                          <button onClick={() => alert(`Calling ${selectedPatient.name}`)} className="w-full h-11 bg-[#0F5F5C] text-white rounded-xl font-bold text-sm mt-4">
+                                            Call Patient Now
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {profileTab === 'Adherence' && (
+                                  <div className="bg-white rounded-2xl border border-[#D0E3E1] p-6 shadow-sm">
+                                    <h3 className="text-lg font-bold text-[#1B2B2A]">Adherence Metrics</h3>
+                                    <div className="grid grid-cols-3 gap-4 text-center mt-4">
+                                      <div className="p-4 bg-[#F4F9F8] rounded-xl"><div className="text-2xl font-bold text-[#0F5F5C]">{selectedPatient.adherence}%</div><span className="text-xs text-[#4B6361]">30-Day Rate</span></div>
+                                      <div className="p-4 bg-[#F4F9F8] rounded-xl"><div className="text-2xl font-bold text-[#2E7D5B]">22 Doses</div><span className="text-xs text-[#4B6361]">Verified Photos</span></div>
+                                      <div className="p-4 bg-[#F4F9F8] rounded-xl"><div className="text-2xl font-bold text-[#8A5D00]">3 Doses</div><span className="text-xs text-[#4B6361]">Missed</span></div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {profileTab === 'Notes' && (
+                                  <div className="bg-white rounded-2xl border border-[#D0E3E1] p-6 shadow-sm space-y-4">
+                                    <div className="flex justify-between items-center pb-2 border-b">
+                                      <h3 className="text-lg font-bold text-[#1B2B2A]">Counsellor Interaction Log</h3>
+                                      <button onClick={() => { setIsFollowUpDrawerOpen(true); setScreenNum(15); }} className="text-sm font-bold text-[#0F5F5C]">+ Add Note</button>
+                                    </div>
+                                    {followUpLogs.map(l => (
+                                      <div key={l.id} className="p-4 bg-[#F4F9F8] rounded-xl border border-[#D0E3E1]">
+                                        <div className="flex justify-between text-xs font-bold text-[#4B6361]">
+                                          <span className="text-[#0F5F5C]">{l.reason}</span>
+                                          <span>{l.time}</span>
+                                        </div>
+                                        <p className="text-sm text-[#1B2B2A] mt-2 font-medium">{l.notes}</p>
+                                        <div className="text-xs text-[#4B6361] mt-2 pt-2 border-t">Outcome: <strong>{l.outcome}</strong> • Next follow-up: <strong>{l.nextDate}</strong></div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right Side: Vertical Timeline (Screen 13) */}
+                              <div className="lg:col-span-4 bg-white rounded-2xl border border-[#D0E3E1] p-6 shadow-sm">
+                                <h3 className="text-lg font-bold text-[#1B2B2A] mb-4">Activity Timeline</h3>
+                                <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#D0E3E1]">
+                                  <div className="relative">
+                                    <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-[#8A5D00] text-white text-[9px] flex items-center justify-center">!</div>
+                                    <span className="text-xs font-bold text-[#4B6361]">Today, 08:30 AM</span>
+                                    <h4 className="text-sm font-bold text-[#1B2B2A]">Check-in pending</h4>
+                                    <p className="text-xs text-[#4B6361]">Reminder delivered. No photo yet.</p>
+                                  </div>
+                                  <div className="relative">
+                                    <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-[#8A9C9A] text-white text-[9px] flex items-center justify-center">-</div>
+                                    <span className="text-xs font-bold text-[#4B6361]">Yesterday, Oct 8</span>
+                                    <h4 className="text-sm font-bold text-[#1B2B2A]">Missed check-in</h4>
+                                    <p className="text-xs text-[#4B6361]">No response to automated reminder.</p>
+                                  </div>
+                                  <div className="relative">
+                                    <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-[#2E7D5B] text-white text-[9px] flex items-center justify-center">✓</div>
+                                    <span className="text-xs font-bold text-[#4B6361]">Oct 7, 2026</span>
+                                    <h4 className="text-sm font-bold text-[#1B2B2A]">Verified photo check-in</h4>
+                                    <p className="text-xs text-[#4B6361]">4-FDC strip confirmed at 09:12 AM.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* SCREEN 15: LOG FOLLOW-UP DRAWER */}
+                            {isFollowUpDrawerOpen && (
+                              <div className="fixed inset-0 z-50 bg-black/40 flex justify-end">
+                                <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-[#D0E3E1] p-6 animate-slideLeft">
+                                  <div>
+                                    <div className="flex justify-between items-center pb-4 border-b">
+                                      <div>
+                                        <h2 className="text-xl font-bold text-[#1B2B2A]">Log Follow-up</h2>
+                                        <p className="text-xs text-[#4B6361]">{selectedPatient.id} • {selectedPatient.name}</p>
+                                      </div>
+                                      <button onClick={() => setIsFollowUpDrawerOpen(false)} className="w-8 h-8 rounded-full bg-[#E8F2F1] font-bold">✕</button>
+                                    </div>
+
+                                    <form id="drawer-form" onSubmit={handleSaveFollowUp} className="space-y-5 mt-6">
+                                      <div>
+                                        <label className="text-sm font-bold text-[#1B2B2A] block mb-2">Reason for call</label>
+                                        <select
+                                          value={followUpReason}
+                                          onChange={(e) => setFollowUpReason(e.target.value)}
+                                          className="w-full h-12 px-4 bg-white border-2 border-[#D0E3E1] rounded-xl text-base font-medium outline-none focus:border-[#0F5F5C]"
+                                        >
+                                          <option>Missed check-in follow-up</option>
+                                          <option>Reported side effects verification</option>
+                                          <option>Upcoming refill coordination</option>
+                                          <option>Routine adherence encouragement</option>
+                                        </select>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-sm font-bold text-[#1B2B2A] block mb-2">Call outcome</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {['Reached', 'No answer', 'Refused'].map((o) => (
+                                            <button
+                                              key={o}
+                                              type="button"
+                                              onClick={() => setFollowUpOutcome(o)}
+                                              className={`h-11 rounded-xl border-2 font-bold text-sm ${followUpOutcome === o ? 'bg-[#0F5F5C] text-white border-[#0F5F5C]' : 'bg-[#F4F9F8] border-[#D0E3E1]'}`}
+                                            >
+                                              {o}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-sm font-bold text-[#1B2B2A] block mb-2">Counsellor notes</label>
+                                        <textarea
+                                          value={followUpNotes}
+                                          onChange={(e) => setFollowUpNotes(e.target.value)}
+                                          placeholder="Notes on patient symptoms, encouragement provided..."
+                                          rows="4"
+                                          className="w-full p-3 bg-white border-2 border-[#D0E3E1] rounded-xl text-sm outline-none focus:border-[#0F5F5C]"
+                                        ></textarea>
+                                      </div>
+
+                                      <div>
+                                        <label className="text-sm font-bold text-[#1B2B2A] block mb-2">Next follow-up date</label>
+                                        <input
+                                          type="date"
+                                          value={followUpDate}
+                                          onChange={(e) => setFollowUpDate(e.target.value)}
+                                          className="w-full h-12 px-4 bg-white border-2 border-[#D0E3E1] rounded-xl text-base outline-none focus:border-[#0F5F5C]"
+                                        />
+                                      </div>
+                                    </form>
+                                  </div>
+
+                                  <button type="submit" form="drawer-form" className="w-full h-14 bg-[#0F5F5C] text-white rounded-xl text-lg font-bold shadow">
+                                    Save follow-up
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Follow-ups view */}
+                        {cTab === 'followups' && (
+                          <div className="space-y-6">
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">All Follow-up Records</h1>
+                            <div className="bg-white rounded-2xl border border-[#D0E3E1] shadow-sm overflow-hidden">
+                              <table className="w-full text-left">
+                                <thead className="bg-[#F4F9F8] border-b text-xs font-bold text-[#4B6361] uppercase">
+                                  <tr>
+                                    <th className="py-4 px-6">Patient</th>
+                                    <th className="py-4 px-6">Reason</th>
+                                    <th className="py-4 px-6">Outcome</th>
+                                    <th className="py-4 px-6">Notes</th>
+                                    <th className="py-4 px-6">Next Follow-up</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#E8F2F1]">
+                                  {followUpLogs.map(l => (
+                                    <tr key={l.id}>
+                                      <td className="py-4 px-6 font-bold">{l.patientName}</td>
+                                      <td className="py-4 px-6">{l.reason}</td>
+                                      <td className="py-4 px-6"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[#E9F5EF] text-[#2E7D5B]">{l.outcome}</span></td>
+                                      <td className="py-4 px-6 text-sm text-[#4B6361]">{l.notes}</td>
+                                      <td className="py-4 px-6 font-semibold text-[#0F5F5C]">{l.nextDate}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reports view */}
+                        {cTab === 'reports' && (
+                          <div className="space-y-6">
+                            <h1 className="text-2xl font-bold text-[#1B2B2A]">District Impact & Default Prevention</h1>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1]">
+                                <div className="text-3xl font-extrabold text-[#2E7D5B]">18 Defaults</div>
+                                <div className="text-sm font-semibold text-[#4B6361] mt-1">Prevented this quarter</div>
+                              </div>
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1]">
+                                <div className="text-3xl font-extrabold text-[#0F5F5C]">34 Hours</div>
+                                <div className="text-sm font-semibold text-[#4B6361] mt-1">Saved per counsellor weekly</div>
+                              </div>
+                              <div className="bg-white rounded-2xl p-6 border border-[#D0E3E1]">
+                                <div className="text-3xl font-extrabold text-[#8A5D00]">89.4%</div>
+                                <div className="text-sm font-semibold text-[#4B6361] mt-1">Cohort adherence rate</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </main>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

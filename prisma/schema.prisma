@@ -1,0 +1,274 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  COUNSELLOR
+  SUPERVISOR
+}
+
+enum TreatmentPhase {
+  INTENSIVE
+  CONTINUATION
+}
+
+enum CheckinMethod {
+  PHOTO
+  IVR
+  COUNSELLOR_CONFIRMED
+}
+
+enum CheckinStatus {
+  CHECKED_IN
+  MISSED
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum FollowupOutcome {
+  REACHED
+  NO_ANSWER
+  REFUSED
+  VISIT_SCHEDULED
+}
+
+enum ApiKeyType {
+  FRONTEND
+  IVR_WEBHOOK
+  ADMIN_TOOL
+}
+
+enum TaskType {
+  MISSED_TWO_DAYS
+  HELP_REQUEST
+  SIDE_EFFECT_ALERT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum NotificationType {
+  REMINDER
+  ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  passwordHash     String
+  name             String
+  role             UserRole     @default(COUNSELLOR)
+  district         String       @default("South Delhi - Chirag Delhi TB Unit")
+  isActive         Boolean      @default(true)
+  assignedPatients Patient[]    @relation("AssignedPatients")
+  followups        Followup[]
+  counsellorTasks  CounsellorTask[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([role, isActive])
+  @@index([email])
+}
+
+model Patient {
+  id                 String           @id @default(uuid())
+  code               String           @unique // e.g. "P-0142"
+  firstName          String
+  lastName           String?
+  phoneEncrypted     String           // AES-256-GCM encrypted
+  phoneHash          String           // SHA-256 hashed for indexed lookups
+  age                Int?
+  gender             String?
+  language           String           @default("en") // 'en' | 'hi' | 'ta' | 'te' | 'bn' | 'mr'
+  textSize           String           @default("medium") // 'small' | 'medium' | 'large'
+  phase              TreatmentPhase   @default(INTENSIVE)
+  monthNumber        Int              @default(1)
+  regimen            String           @default("4-FDC Daily")
+  regimenStartDate   DateTime         @default(now())
+  regimenEndDate     DateTime?
+  phcLocation        String           @default("Chirag Delhi PHC")
+  distanceToClinicKm Float            @default(2.5)
+  reminderTime       String           @default("08:00") // HH:mm
+  consentGiven       Boolean          @default(true)
+  consentRecordedAt  DateTime         @default(now())
+  pinHash            String?          // bcrypt hash of 4-digit PIN
+  assignedCounsellorId String?
+  assignedCounsellor User?            @relation("AssignedPatients", fields: [assignedCounsellorId], references: [id])
+  lastContactAt      DateTime?
+  checkins           Checkin[]
+  sideEffectReports  SideEffectReport[]
+  riskScores         RiskScore[]
+  followups          Followup[]
+  counsellorTasks    CounsellorTask[]
+  notifications      Notification[]
+  ivrCalls           IvrCall[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([assignedCounsellorId])
+  @@index([lastContactAt])
+  @@index([code])
+  @@index([phoneHash])
+}
+
+model Checkin {
+  id               String        @id @default(uuid())
+  patientId        String
+  patient          Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date             String        // YYYY-MM-DD
+  method           CheckinMethod @default(PHOTO)
+  status           CheckinStatus @default(CHECKED_IN)
+  photoUrl         String?
+  submittedAt      DateTime      @default(now())
+  offlineCreatedAt DateTime?
+  idempotencyKey   String?       @unique
+  createdAt        DateTime      @default(now())
+
+  @@unique([patientId, date])
+  @@index([date, status])
+  @@index([patientId, submittedAt])
+}
+
+model SideEffectReport {
+  id                String   @id @default(uuid())
+  patientId         String
+  patient           Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  checkinId         String?
+  symptoms          String   // JSON string array e.g. ["sick", "stomach"]
+  freeTextEncrypted String?  // AES-256-GCM encrypted notes
+  severityFlag      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([patientId, createdAt])
+}
+
+model RiskScore {
+  id              String    @id @default(uuid())
+  patientId       String
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  score           Int       // 0 - 100
+  level           RiskLevel
+  topReasons      String    // JSON string array of { text: string, impact: number }
+  priorityScore   Float     // score + urgency factor
+  suggestedAction String
+  flagSummary     String
+  modelVersion    String    @default("rule-v1.0")
+  computedAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  @@index([patientId, computedAt])
+  @@index([level])
+  @@index([priorityScore])
+}
+
+model Followup {
+  id               String          @id @default(uuid())
+  patientId        String
+  patient          Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  counsellorId     String
+  counsellor       User            @relation(fields: [counsellorId], references: [id])
+  reason           String
+  outcome          FollowupOutcome
+  notesEncrypted   String?         // AES-256-GCM encrypted
+  nextFollowupDate DateTime?
+  loggedAt         DateTime        @default(now())
+  createdAt        DateTime        @default(now())
+
+  @@index([counsellorId, loggedAt])
+  @@index([patientId, loggedAt])
+}
+
+model CounsellorTask {
+  id           String     @id @default(uuid())
+  patientId    String
+  patient      Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  counsellorId String?
+  counsellor   User?      @relation(fields: [counsellorId], references: [id])
+  type         TaskType
+  status       TaskStatus @default(PENDING)
+  details      String?
+  createdAt    DateTime   @default(now())
+  resolvedAt   DateTime?
+
+  @@index([counsellorId, status])
+  @@index([patientId, status])
+}
+
+model Notification {
+  id           String             @id @default(uuid())
+  patientId    String
+  patient      Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  type         NotificationType   @default(REMINDER)
+  messageKey   String
+  status       NotificationStatus @default(PENDING)
+  scheduledFor DateTime
+  sentAt       DateTime?
+  createdAt    DateTime           @default(now())
+
+  @@index([scheduledFor, status])
+  @@index([patientId])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  userRole     String?
+  action       String   // e.g. "FULL_PHONE_VIEW", "CALL_INITIATED", "PATIENT_ENROLLED", "API_KEY_CREATED"
+  resourceType String   // "Patient", "ApiKey", "Checkin", etc.
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     String?  // JSON string
+  timestamp    DateTime @default(now())
+
+  @@index([userId, timestamp])
+  @@index([resourceType, resourceId])
+  @@index([action, timestamp])
+}
+
+model ApiKey {
+  id        String     @id @default(uuid())
+  name      String
+  keyHash   String     @unique // SHA-256
+  type      ApiKeyType
+  scopes    String     // JSON string array e.g. ["frontend"]
+  rateLimit Int        @default(120)
+  isActive  Boolean    @default(true)
+  lastUsedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([keyHash])
+  @@index([isActive, type])
+}
+
+model IvrCall {
+  id             String   @id @default(uuid())
+  patientId      String?
+  patient        Patient? @relation(fields: [patientId], references: [id])
+  callSid        String?
+  fromPhoneHash  String?
+  digitsPressed  String?
+  callStatus     String?
+  createdAt      DateTime @default(now())
+
+  @@index([patientId, createdAt])
+}
