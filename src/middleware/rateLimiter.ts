@@ -10,9 +10,16 @@ export const authRateLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: true,
   store: new RedisStore({
     // @ts-ignore
-    sendCommand: (...args: string[]) => redis.call(args[0], ...args.slice(1)),
+    sendCommand: async (...args: string[]) => {
+      try {
+        return await redis.call(args[0], ...args.slice(1));
+      } catch {
+        return null;
+      }
+    },
     prefix: 'rl:auth:',
   }),
   keyGenerator: (req: Request) => {
@@ -37,9 +44,16 @@ export const generalRateLimiter = rateLimit({
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: true,
   store: new RedisStore({
     // @ts-ignore
-    sendCommand: (...args: string[]) => redis.call(args[0], ...args.slice(1)),
+    sendCommand: async (...args: string[]) => {
+      try {
+        return await redis.call(args[0], ...args.slice(1));
+      } catch {
+        return null;
+      }
+    },
     prefix: 'rl:general:',
   }),
   keyGenerator: (req: Request) => {

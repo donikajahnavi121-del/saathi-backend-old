@@ -2,10 +2,6 @@ import Redis from 'ioredis';
 import { ENV } from './env.js';
 import { logger } from '../utils/logger.js';
 
-let redisClient: Redis | null = null;
-let isConnected = false;
-
-// Simple in-memory fallback store if Redis is unavailable (e.g. in test or standalone dev)
 class InMemoryRedisFallback {
   private store = new Map<string, { value: string; expiresAt?: number }>();
 
@@ -73,69 +69,182 @@ class InMemoryRedisFallback {
     this.store.clear();
     return 'OK';
   }
+
+  async call(command: string, ...args: any[]): Promise<any> {
+    const cmd = command.toLowerCase();
+    if (cmd === 'get') return this.get(args[0]);
+    if (cmd === 'set') return this.set(args[0], args[1], args[2], args[3]);
+    if (cmd === 'del') return this.del(args[0]);
+    if (cmd === 'incr') return this.incr(args[0]);
+    if (cmd === 'expire') return this.expire(args[0], args[1]);
+    if (cmd === 'ttl') return this.ttl(args[0]);
+    if (cmd === 'ping') return 'PONG';
+    return null;
+  }
 }
 
-const memoryFallback = new InMemoryRedisFallback();
+const memoryStore = new InMemoryRedisFallback();
+let isRealRedisReady = false;
+let realClient: Redis | null = null;
 
-export function getRedisClient(): Redis | any {
-  if (redisClient) {
-    return redisClient;
-  }
+try {
+  realClient = new Redis(ENV.REDIS_URL, {
+    maxRetriesPerRequest: 1,
+    enableReadyCheck: false,
+    retryStrategy(times) {
+      // Retry every 5 seconds silently without throwing uncaught exceptions
+      return 5000;
+    },
+    lazyConnect: true,
+  });
 
-  try {
-    const client = new Redis(ENV.REDIS_URL, {
-      maxRetriesPerRequest: null,
-      enableReadyCheck: true,
-      retryStrategy(times) {
-        if (times > 3) {
-          logger.warn('Redis reconnection failed after 3 attempts, using in-memory fallback');
-          return null; // Stop retrying
+  realClient.on('connect', () => {
+    isRealRedisReady = true;
+    logger.info('Connected to Redis');
+  });
+
+  realClient.on('ready', () => {
+    isRealRedisReady = true;
+  });
+
+  realClient.on('error', () => {
+    isRealRedisReady = false;
+    // Suppress unhandled error event so it never crashes node process
+  });
+
+  realClient.on('close', () => {
+    isRealRedisReady = false;
+  });
+
+  realClient.connect().catch(() => {
+    isRealRedisReady = false;
+  });
+} catch {
+  isRealRedisReady = false;
+}
+
+// Resilient Proxy that never crashes if Redis is offline
+export const redis: any = {
+  async get(key: string): Promise<string | null> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.get(key);
+      } catch {
+        return memoryStore.get(key);
+      }
+    }
+    return memoryStore.get(key);
+  },
+
+  async set(key: string, value: string, mode?: string, duration?: number): Promise<any> {
+    if (isRealRedisReady && realClient) {
+      try {
+        if (mode && duration) {
+          return await (realClient as any).set(key, value, mode, duration);
         }
-        return Math.min(times * 200, 1000);
-      },
-      lazyConnect: true,
-    });
+        return await realClient.set(key, value);
+      } catch {
+        return memoryStore.set(key, value, mode, duration);
+      }
+    }
+    return memoryStore.set(key, value, mode, duration);
+  },
 
-    client.on('connect', () => {
-      isConnected = true;
-      logger.info('Connected to Redis');
-    });
+  async setex(key: string, seconds: number, value: string): Promise<any> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.setex(key, seconds, value);
+      } catch {
+        return memoryStore.setex(key, seconds, value);
+      }
+    }
+    return memoryStore.setex(key, seconds, value);
+  },
 
-    client.on('error', (err) => {
-      isConnected = false;
-      logger.warn({ error: err.message }, 'Redis connection notice - fallback active if offline');
-    });
+  async del(key: string | string[]): Promise<number> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.del(Array.isArray(key) ? key : [key]);
+      } catch {
+        return memoryStore.del(key);
+      }
+    }
+    return memoryStore.del(key);
+  },
 
-    // Attempt initial async connect without crashing app if Redis is temporarily offline
-    client.connect().catch((err) => {
-      logger.warn({ error: err.message }, 'Could not immediately connect to Redis, in-memory cache ready');
-    });
+  async incr(key: string): Promise<number> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.incr(key);
+      } catch {
+        return memoryStore.incr(key);
+      }
+    }
+    return memoryStore.incr(key);
+  },
 
-    redisClient = client;
-    return redisClient;
-  } catch (error: any) {
-    logger.warn({ error: error.message }, 'Initializing in-memory Redis fallback');
-    return memoryFallback;
-  }
-}
+  async expire(key: string, seconds: number): Promise<number> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.expire(key, seconds);
+      } catch {
+        return memoryStore.expire(key, seconds);
+      }
+    }
+    return memoryStore.expire(key, seconds);
+  },
 
-export const redis = getRedisClient();
+  async ttl(key: string): Promise<number> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.ttl(key);
+      } catch {
+        return memoryStore.ttl(key);
+      }
+    }
+    return memoryStore.ttl(key);
+  },
+
+  async ping(): Promise<string> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await realClient.ping();
+      } catch {
+        return 'PONG';
+      }
+    }
+    return 'PONG';
+  },
+
+  async quit(): Promise<any> {
+    if (realClient) {
+      try {
+        await realClient.quit();
+      } catch {}
+    }
+    return memoryStore.quit();
+  },
+
+  async call(command: string, ...args: any[]): Promise<any> {
+    if (isRealRedisReady && realClient) {
+      try {
+        return await (realClient as any).call(command, ...args);
+      } catch {
+        return memoryStore.call(command, ...args);
+      }
+    }
+    return memoryStore.call(command, ...args);
+  },
+};
 
 export async function checkRedisHealth(): Promise<boolean> {
-  try {
-    const res = await redis.ping();
-    return res === 'PONG';
-  } catch {
-    return false;
-  }
+  return isRealRedisReady;
 }
 
 export async function disconnectRedis(): Promise<void> {
-  if (redisClient) {
+  if (realClient) {
     try {
-      await redisClient.quit();
-    } catch {
-      // Ignore if already closed
-    }
+      await realClient.quit();
+    } catch {}
   }
 }

@@ -4,14 +4,12 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install && npx prisma generate && npx prisma db push && npm run seed
     startCommand: npm run start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
       - key: CORS_ORIGIN
         value: "*"
       - key: DATABASE_URL
@@ -24,6 +22,12 @@ services:
         generateValue: true
       - key: ENCRYPTION_KEY
         value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      - key: FRONTEND_API_KEY
+        value: saathi_fe_key_2026_prod_demo_live
+      - key: IVR_API_KEY
+        value: saathi_ivr_key_2026_webhook_secure
+      - key: ADMIN_API_KEY
+        value: saathi_adm_key_2026_supervisor_tool
 
 databases:
   - name: saathi-db

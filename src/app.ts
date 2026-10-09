@@ -72,6 +72,11 @@ try {
 // Health Check
 app.use(healthRoutes);
 
+// Root redirect to Swagger Documentation
+app.get('/', (req, res) => {
+  res.redirect('/docs');
+});
+
 // API Version 1 Routes
 app.use('/api/v1/patient', patientRoutes);
 app.use('/api/v1/counsellor', counsellorRoutes);

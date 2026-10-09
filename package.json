@@ -8,7 +8,7 @@
     "dev:all": "concurrently \"vite --port 3000\" \"tsx watch src/server.ts\"",
     "dev:frontend": "vite --port 3000",
     "build": "tsc -p tsconfig.server.json",
-    "start": "node dist/server.js",
+    "start": "tsx src/server.ts",
     "seed": "tsx scripts/seed.ts",
     "api-keys": "tsx scripts/manage-api-keys.ts",
     "prisma:generate": "prisma generate",
@@ -39,6 +39,7 @@
     "sharp": "^0.33.5",
     "swagger-ui-express": "^5.0.1",
     "tailwind-merge": "^2.5.4",
+    "tsx": "^4.19.1",
     "yamljs": "^0.3.0",
     "zod": "^3.23.8"
   },
