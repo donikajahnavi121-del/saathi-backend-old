@@ -5,6 +5,7 @@ services:
     plan: free
     buildCommand: npm install && npx prisma generate && npx prisma db push && npm run seed
     startCommand: npm run start
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
@@ -30,5 +31,4 @@ services:
 databases:
   - name: saathi-db
     databaseName: saathi_db
-    user: postgres
     plan: free
