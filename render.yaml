@@ -4,8 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npx prisma generate
-    preDeployCommand: npx prisma db push && npm run seed
-    startCommand: npm run start
+    startCommand: npx prisma db push && npm run seed && npm run start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
